@@ -38,8 +38,8 @@ config.plugins.serviceapp                               = ConfigSubsection()
 config_serviceapp                                       = config.plugins.serviceapp
 
 config_serviceapp.servicemp3                            = ConfigSubsection()
-config_serviceapp.servicemp3.replace                    = ConfigBoolean(default=False, descriptions={0: _("original"), 1: _("serviceapp")})
-config_serviceapp.servicemp3.replace.value              = serviceapp_client.isServiceMP3Replaced()
+config_serviceapp.servicemp3.replace                    = ConfigBoolean(default=True, descriptions={0: _("original"), 1: _("serviceapp")})
+config_serviceapp.servicemp3.replace.value              = True
 config_serviceapp.servicemp3.player                     = ConfigSelection(default="gstplayer", choices=player_choices)
 
 config_serviceapp.options                               = ConfigSubDict()
@@ -245,17 +245,16 @@ class ServiceAppSettings(ConfigListScreen, Screen):
     def build_configlist(self):
         config_list = [getConfigListEntry(_("Enigma2 playback system"), 
             config_serviceapp.servicemp3.replace, _("Select the player which will be used for Enigma2 playback."))]
-        if config_serviceapp.servicemp3.replace.value:
-            config_list.append(getConfigListEntry(_("Player"), 
-                config_serviceapp.servicemp3.player, _("Select the player which will be used in serviceapp for Enigma2 playback.")))
-            configlist_servicemp3 = [getConfigListEntry("", ConfigNothing())]
-            configlist_servicemp3.append(getConfigListEntry(_("ServiceMp3 (%s)" % str(serviceapp_client.ID_SERVICEMP3)), ConfigNothing()))
-            if config_serviceapp.servicemp3.player.value == "gstplayer":
-                config_list += configlist_servicemp3 + self.player_options("gstplayer","servicemp3")
-            elif config_serviceapp.servicemp3.player.value == "exteplayer3":
-                config_list += configlist_servicemp3 + self.player_options("exteplayer3","servicemp3")
-            else:
-                config_list += configlist_servicemp3
+        config_list.append(getConfigListEntry(_("Player"), 
+            config_serviceapp.servicemp3.player, _("Select the player which will be used in serviceapp for Enigma2 playback.")))
+        configlist_servicemp3 = [getConfigListEntry("", ConfigNothing())]
+        configlist_servicemp3.append(getConfigListEntry(_("ServiceMp3 (%s)" % str(serviceapp_client.ID_SERVICEMP3)), ConfigNothing()))
+        if config_serviceapp.servicemp3.player.value == "gstplayer":
+            config_list += configlist_servicemp3 + self.player_options("gstplayer","servicemp3")
+        elif config_serviceapp.servicemp3.player.value == "exteplayer3":
+            config_list += configlist_servicemp3 + self.player_options("exteplayer3","servicemp3")
+        else:
+            config_list += configlist_servicemp3
         config_list.append(getConfigListEntry("", ConfigNothing()))
         config_list.append(getConfigListEntry(_("ServiceGstPlayer (%s)" % str(serviceapp_client.ID_SERVICEGSTPLAYER)), ConfigNothing()))
         config_list += self.player_options("gstplayer", "servicegstplayer")
@@ -266,19 +265,15 @@ class ServiceAppSettings(ConfigListScreen, Screen):
         self["config"].l.setList(config_list)
 
     def keyOk(self):
-        if config_serviceapp.servicemp3.replace.isChanged():
-            self.session.openWithCallback(self.save_settings_and_close, 
-                    MessageBox, _("Enigma2 playback system was changed and Enigma2 should be restarted\n\nDo you want to restart it now?"),
-                    type=MessageBox.TYPE_YESNO)
-        else:
-            self.save_settings_and_close()
+        self.save_settings_and_close()
 
     def save_settings_and_close(self, callback=False):
         init_serviceapp_settings()
         if config_serviceapp.servicemp3.replace.value:
             serviceapp_client.setServiceMP3Replace(True)
         else:
-            serviceapp_client.setServiceMP3Replace(False)
+            serviceapp_client.setServiceMP3Replace(True)
+            config_serviceapp.servicemp3.replace.value = True
         self.saveAll()
         self.close(callback)
 
